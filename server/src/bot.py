@@ -1,5 +1,5 @@
 import discord
-import freeWaterAPI
+import freeWaterAPI 
 import os
 
 """
@@ -62,6 +62,7 @@ def run_discord_bot(p_token=None):
             await send_message(message, user_message, is_private=True)
         else:
             await send_message(message, user_message, is_private=False)
+
 
     # Run the discord bot whenever a valid token is recieved
     while True:
