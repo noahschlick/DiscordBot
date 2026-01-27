@@ -1,6 +1,8 @@
 import discord
-import freeWaterAPI 
+import stoic_api
 import os
+
+conversation_storage = {}
 
 """
 send_message
@@ -12,13 +14,22 @@ The is_private parameter is a boolean value indicating whether the message shoul
 """
 async def send_message(message, user_message, is_private):
     try:
-        responseJSON = await freeWaterAPI.getAnswer(user_message)
+        user_id = str(message.author.id)
+        history = conversation_storage.get(user_id, [])
+
+        responseJSON = await stoic_api.getAnswer(user_message, history)
         response = responseJSON['response']
+
+        # Store the exchange in history
+        history.append({"role": "user", "content": user_message})
+        history.append({"role": "assitant", "content": response})
+        conversation_storage[user_id] = history
+        
         await message.author.send(response) if is_private else await message.channel.send(response)
     except Exception as e:
         print(e)
         error_response = "I am currently not connected to the AI that helps me answer your question."
-        await message.author.send(error_response) if is_private else await message.channel.send(error_response)
+        await message.author.send(error_response)
 
 
 """
@@ -29,15 +40,13 @@ token stored in the DISCORD_TOKEN environment variable. If no token is passed as
 the function attempts to retrieve the token from the environment variable.
 """
 def run_discord_bot(p_token=None):
+
     intents = discord.Intents.default()
     intents.message_content = True
     client = discord.Client(intents=intents)
 
-    # Get environment token, or use your own token to make your own bot
-    if p_token is None:
-        l_token = os.getenv('DISCORD_TOKEN')
-    else:
-        l_token = p_token
+    l_token = os.getenv('DISCORD_TOKEN')
+
 
     # Send message to console when called
     @client.event
@@ -47,6 +56,7 @@ def run_discord_bot(p_token=None):
     # Wait for a message.
     @client.event
     async def on_message(message):
+        print("Sending message")
         if message.author == client.user:
             return
 
